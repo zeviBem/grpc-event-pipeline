@@ -1,21 +1,22 @@
-using System.Threading.Channels;
 using Notifications.Server.Domain;
 
 namespace Notifications.Server.Application.Abstractions;
 
 public sealed class NotificationSubscription : IDisposable
 {
-    private readonly ChannelReader<Notification> _reader;
+    private readonly Func<CancellationToken, IAsyncEnumerable<Notification>> _read;
     private readonly Action _unsubscribe;
 
-    public NotificationSubscription(ChannelReader<Notification> reader, Action unsubscribe)
+    public NotificationSubscription(
+        Func<CancellationToken, IAsyncEnumerable<Notification>> read,
+        Action unsubscribe)
     {
-        _reader = reader;
+        _read = read;
         _unsubscribe = unsubscribe;
     }
 
     public IAsyncEnumerable<Notification> ReadAllAsync(CancellationToken cancellationToken) =>
-        _reader.ReadAllAsync(cancellationToken);
+        _read(cancellationToken);
 
     public void Dispose() => _unsubscribe();
 }

@@ -28,15 +28,15 @@ internal static class NotificationValidator
         ThrowIfAny(errors);
     }
 
-    public static void ValidateHistoryRequest(string recipientId, int? maxResults, int maxAllowed)
+    public static void ValidateHistoryRequest(string recipientId, int? maxResults)
     {
         var errors = new List<string>();
 
         CheckRequiredText(recipientId, "recipient_id", MaxRecipientIdLength, errors);
 
-        if (maxResults is < 1 || maxResults > maxAllowed)
+        if (maxResults is < 1 || maxResults > NotificationLimits.MaxHistorySize)
         {
-            errors.Add($"max_results must be between 1 and {maxAllowed}.");
+            errors.Add($"max_results must be between 1 and {NotificationLimits.MaxHistorySize}.");
         }
 
         ThrowIfAny(errors);

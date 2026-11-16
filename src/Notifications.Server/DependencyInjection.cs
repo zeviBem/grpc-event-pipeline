@@ -10,15 +10,8 @@ public static class DependencyInjection
     /// Registers the notification feature. All services are singletons:
     /// the store and the broadcaster hold shared in-memory state, and the service is stateless.
     /// </summary>
-    public static IServiceCollection AddNotifications(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddNotifications(this IServiceCollection services)
     {
-        services
-            .AddOptions<NotificationOptions>()
-            .Bind(configuration.GetSection(NotificationOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<INotificationStore, InMemoryNotificationStore>();
         services.AddSingleton<INotificationBroadcaster, InMemoryNotificationBroadcaster>();
         services.AddSingleton<INotificationService, NotificationService>();

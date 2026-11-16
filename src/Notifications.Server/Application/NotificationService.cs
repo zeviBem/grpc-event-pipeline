@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Notifications.Server.Application.Abstractions;
 using Notifications.Server.Application.Exceptions;
 using Notifications.Server.Domain;
@@ -9,21 +8,16 @@ public sealed class NotificationService : INotificationService
 {
     private readonly INotificationStore _store;
     private readonly INotificationBroadcaster _broadcaster;
-    private readonly TimeProvider _clock;
-    private readonly NotificationOptions _options;
     private readonly ILogger<NotificationService> _logger;
+    private readonly SemaphoreSlim _sendGate = new(1, 1);
 
     public NotificationService(
         INotificationStore store,
         INotificationBroadcaster broadcaster,
-        TimeProvider clock,
-        IOptions<NotificationOptions> options,
         ILogger<NotificationService> logger)
     {
         _store = store;
         _broadcaster = broadcaster;
-        _clock = clock;
-        _options = options.Value;
         _logger = logger;
     }
 
@@ -36,12 +30,21 @@ public sealed class NotificationService : INotificationService
             RecipientId: command.RecipientId,
             Title: command.Title,
             Body: command.Body,
-            CreatedAt: _clock.GetUtcNow());
+            CreatedAt: DateTimeOffset.UtcNow);
 
-        // Cancellation is honored up to here. Once stored, the notification is also
-        // published, so history and live subscribers never disagree.
-        await _store.AddAsync(notification, cancellationToken);
-        _broadcaster.Publish(notification);
+        // Store and publish run one send at a time, so two concurrent sends cannot be stored
+        // in one order and delivered in the other. Cancellation is honored until the store call:
+        // once stored, the notification is also published, so history and live subscribers agree.
+        await _sendGate.WaitAsync(cancellationToken);
+        try
+        {
+            await _store.AddAsync(notification, cancellationToken);
+            _broadcaster.Publish(notification);
+        }
+        finally
+        {
+            _sendGate.Release();
+        }
 
         _logger.LogInformation(
             "Notification {NotificationId} sent to {RecipientId}",
@@ -64,11 +67,11 @@ public sealed class NotificationService : INotificationService
         int? maxResults,
         CancellationToken cancellationToken)
     {
-        NotificationValidator.ValidateHistoryRequest(recipientId, maxResults, _options.MaxHistorySize);
+        NotificationValidator.ValidateHistoryRequest(recipientId, maxResults);
 
         return _store.GetByRecipientAsync(
             recipientId,
-            maxResults ?? _options.DefaultHistorySize,
+            maxResults ?? NotificationLimits.DefaultHistorySize,
             cancellationToken);
     }
 
