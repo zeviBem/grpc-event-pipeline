@@ -3,10 +3,6 @@ using Notifications.Contracts.V1;
 
 namespace Notifications.Client;
 
-/// <summary>
-/// Walks through every feature of the service: live streaming with cancellation,
-/// history, lookup by id, error status codes and deadlines.
-/// </summary>
 internal sealed class NotificationDemo
 {
     private const string RecipientId = "user-42";
@@ -28,7 +24,6 @@ internal sealed class NotificationDemo
         await ShowDeadlineAsync();
     }
 
-    /// <summary>Subscribe, receive several notifications, then cancel the subscription.</summary>
     private async Task<Notification> StreamWhileSendingAsync()
     {
         PrintSection("1. Live stream: subscribe, receive, cancel");
@@ -38,7 +33,6 @@ internal sealed class NotificationDemo
             new StreamNotificationsRequest { RecipientId = RecipientId },
             cancellationToken: cancellation.Token);
 
-        // The server sends headers once the subscription is active.
         await call.ResponseHeadersAsync;
         Console.WriteLine($"Subscribed to notifications of '{RecipientId}'.");
 
@@ -135,7 +129,6 @@ internal sealed class NotificationDemo
             () => _client.GetNotificationHistoryAsync(new NotificationHistoryRequest { RecipientId = RecipientId, MaxResults = 0 }).ResponseAsync);
     }
 
-    /// <summary>A stream with a 2-second deadline ends with DEADLINE_EXCEEDED.</summary>
     private async Task ShowDeadlineAsync()
     {
         PrintSection("5. Deadline (stream with a 2 second deadline)");

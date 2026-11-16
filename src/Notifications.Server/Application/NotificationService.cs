@@ -32,9 +32,6 @@ public sealed class NotificationService : INotificationService
             Body: command.Body,
             CreatedAt: DateTimeOffset.UtcNow);
 
-        // Store and publish run one send at a time, so two concurrent sends cannot be stored
-        // in one order and delivered in the other. Cancellation is honored until the store call:
-        // once stored, the notification is also published, so history and live subscribers agree.
         await _sendGate.WaitAsync(cancellationToken);
         try
         {

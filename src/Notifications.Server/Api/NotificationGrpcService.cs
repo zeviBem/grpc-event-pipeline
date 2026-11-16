@@ -54,12 +54,8 @@ public sealed class NotificationGrpcService : Proto.NotificationService.Notifica
     {
         using var subscription = _notifications.Subscribe(request.RecipientId);
 
-        // Sending the response headers tells the client that the subscription is active.
-        // A client that waits for them will not miss notifications sent right after subscribing.
         await context.WriteResponseHeadersAsync(new Metadata());
 
-        // Runs until the client cancels or the deadline expires. The token then ends the loop,
-        // and 'using' removes the subscription.
         await foreach (var notification in subscription.ReadAllAsync(context.CancellationToken))
         {
             await responseStream.WriteAsync(notification.ToContract(), context.CancellationToken);

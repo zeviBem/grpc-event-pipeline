@@ -6,62 +6,47 @@ option csharp_namespace = "Notifications.Contracts.V1";
 
 import "google/protobuf/timestamp.proto";
 
-// Notification Service: send notifications, read history, and subscribe to live updates.
 service NotificationService {
-  // Unary: stores a new notification and publishes it to live subscribers.
   rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
 
-  // Unary: returns a single notification by id. Fails with NOT_FOUND if it does not exist.
   rpc GetNotification(GetNotificationRequest) returns (Notification);
 
-  // Unary: returns past notifications of a recipient, newest first.
   rpc GetNotificationHistory(NotificationHistoryRequest) returns (NotificationHistoryResponse);
 
-  // Server streaming: pushes new notifications of a recipient until the client cancels.
   rpc StreamNotifications(StreamNotificationsRequest) returns (stream Notification);
 }
 
-// ---------- Resource ----------
-
 message Notification {
-  string id = 1;                                // Assigned by the server.
+  string id = 1;
   string recipient_id = 2;
   string title = 3;
   string body = 4;
-  google.protobuf.Timestamp created_at = 5;     // Assigned by the server.
+  google.protobuf.Timestamp created_at = 5;
 }
 
-// ---------- SendNotification ----------
-
 message SendNotificationRequest {
-  string recipient_id = 1;                      // Required.
-  string title = 2;                             // Required.
-  string body = 3;                              // Required.
+  string recipient_id = 1;
+  string title = 2;
+  string body = 3;
 }
 
 message SendNotificationResponse {
-  Notification notification = 1;               // The stored notification, including id and created_at.
+  Notification notification = 1;
 }
-
-// ---------- GetNotification ----------
 
 message GetNotificationRequest {
-  string id = 1;                                // Required.
+  string id = 1;
 }
 
-// ---------- GetNotificationHistory ----------
-
 message NotificationHistoryRequest {
-  string recipient_id = 1;                      // Required.
-  optional int32 max_results = 2;               // Optional. When not set, the server default is used.
+  string recipient_id = 1;
+  optional int32 max_results = 2;
 }
 
 message NotificationHistoryResponse {
   repeated Notification notifications = 1;
 }
 
-// ---------- StreamNotifications ----------
-
 message StreamNotificationsRequest {
-  string recipient_id = 1;                      // Required.
+  string recipient_id = 1;
 }

@@ -4,17 +4,6 @@ using Notifications.Server.Application.Exceptions;
 
 namespace Notifications.Server.Api;
 
-/// <summary>
-/// Translates exceptions into gRPC status codes, in one place for every RPC.
-/// The client always gets a meaningful status code, never a raw exception.
-/// <list type="bullet">
-///   <item><see cref="ValidationException"/> -> INVALID_ARGUMENT</item>
-///   <item><see cref="NotFoundException"/> -> NOT_FOUND</item>
-///   <item><see cref="SubscriberOverflowException"/> -> RESOURCE_EXHAUSTED</item>
-///   <item>Cancelled by the client -> CANCELLED, deadline reached -> DEADLINE_EXCEEDED</item>
-///   <item>Anything else -> INTERNAL, logged on the server, details are not sent to the client</item>
-/// </list>
-/// </summary>
 public sealed class ExceptionMappingInterceptor : Interceptor
 {
     private readonly ILogger<ExceptionMappingInterceptor> _logger;

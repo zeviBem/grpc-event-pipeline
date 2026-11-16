@@ -13,15 +13,10 @@ public sealed class InMemoryNotificationBroadcaster : INotificationBroadcaster
 
     public void Publish(Notification notification)
     {
-        // Enumerating the dictionary itself does not lock it. '.Values' would lock it
-        // and copy every subscriber on each publish.
         foreach (var (_, subscriber) in _subscribers)
         {
             if (subscriber.RecipientId == notification.RecipientId && !subscriber.Writer.TryWrite(notification))
             {
-                // The buffer is full (or the subscription is already closed). Instead of silently
-                // losing notifications, close this subscription with an error the client can see.
-                // The reader still gets what is already buffered, then the error.
                 CloseWithOverflow(subscriber);
             }
         }
@@ -31,7 +26,6 @@ public sealed class InMemoryNotificationBroadcaster : INotificationBroadcaster
     {
         var channel = Channel.CreateBounded<Notification>(new BoundedChannelOptions(NotificationLimits.SubscriberBufferSize)
         {
-            // With Wait, TryWrite returns false when the buffer is full. It never blocks the sender.
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false,

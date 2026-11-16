@@ -13,7 +13,6 @@ app.MapGrpcService<NotificationGrpcService>();
 
 if (app.Environment.IsDevelopment())
 {
-    // Lets tools like grpcurl discover the services without the .proto file.
     app.MapGrpcReflectionService();
 }
 

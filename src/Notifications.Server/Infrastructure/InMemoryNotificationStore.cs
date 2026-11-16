@@ -53,9 +53,6 @@ public sealed class InMemoryNotificationStore : INotificationStore
                 return Task.FromResult<IReadOnlyList<Notification>>(Array.Empty<Notification>());
             }
 
-            // Notifications are appended in the order they were sent, so the newest are at the end.
-            // Walking from the end copies only the requested items, not the whole list,
-            // which keeps the lock short. The result is a copy, so callers never see the list change.
             var count = Math.Min(maxResults, recipientNotifications.Count);
             var newestFirst = new List<Notification>(count);
 

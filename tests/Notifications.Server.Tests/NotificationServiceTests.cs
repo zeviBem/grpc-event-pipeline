@@ -7,7 +7,6 @@ using Notifications.Server.Infrastructure;
 
 namespace Notifications.Server.Tests;
 
-// These tests use the real in-memory store and broadcaster, so no mocking library is needed.
 public class NotificationServiceTests
 {
     private readonly NotificationService _service = new(
@@ -62,7 +61,6 @@ public class NotificationServiceTests
         await _service.SendAsync(Command(recipient: "someone-else"), CancellationToken.None);
         var sent = await _service.SendAsync(Command(recipient: "user-1"), CancellationToken.None);
 
-        // Timeout so a broken test fails instead of hanging forever.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await foreach (var received in subscription.ReadAllAsync(timeout.Token))
         {
@@ -74,9 +72,6 @@ public class NotificationServiceTests
     [Fact]
     public async Task Sends_AreDeliveredInStoredOrder_EvenWhenTheFirstStoreCallIsSlow()
     {
-        // The fake store makes the first send slow: it stores the notification, then waits.
-        // Without the send lock the second send would finish and publish first,
-        // so the stream order would differ from the stored order. The test forces that timing.
         var store = new SlowFirstStore();
         var service = new NotificationService(
             store,
@@ -89,7 +84,6 @@ public class NotificationServiceTests
 
         var second = Task.Run(() => service.SendAsync(Command(title: "second"), CancellationToken.None));
 
-        // With the lock, the second send waits here for the first. Without it, it finishes at once.
         await Task.WhenAny(second, Task.Delay(200));
         store.ReleaseFirst();
         await Task.WhenAll(first, second);
@@ -116,7 +110,6 @@ public class NotificationServiceTests
 
         await _service.SendAsync(Command(recipient: "user-1"), CancellationToken.None);
 
-        // The stream is closed, so reading ends immediately with no items.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var received = new List<Notification>();
         await foreach (var notification in subscription.ReadAllAsync(timeout.Token))
@@ -132,13 +125,11 @@ public class NotificationServiceTests
     {
         using var subscription = _service.Subscribe("user-1");
 
-        // The subscriber never reads, so its buffer fills up. One extra send overflows it.
         for (var i = 0; i <= NotificationLimits.SubscriberBufferSize; i++)
         {
             await _service.SendAsync(Command(), CancellationToken.None);
         }
 
-        // The subscriber still gets everything that was buffered, and then the error.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var received = 0;
 
@@ -154,10 +145,6 @@ public class NotificationServiceTests
     }
 }
 
-/// <summary>
-/// Wraps the real store, but the first AddAsync stores the notification and then waits
-/// until the test releases it. This lets a test control the timing of concurrent sends.
-/// </summary>
 file sealed class SlowFirstStore : INotificationStore
 {
     private readonly InMemoryNotificationStore _inner = new();
